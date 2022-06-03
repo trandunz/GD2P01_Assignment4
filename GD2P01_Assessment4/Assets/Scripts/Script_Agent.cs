@@ -4,29 +4,140 @@ using UnityEngine;
 
 public class Script_Agent : MonoBehaviour
 {
+    public enum STATE
+    {
+        UNASSIGNED = 0,
+
+        SEEK_FLAG,
+        SEEK_FRIENDLY_FLAG,
+        SEEK_JAIL,
+        SEEK_HOME,
+
+        JAILED,
+        DEFENDING_JAIL,
+        DEFENDING_FLAG
+    }
+
     [SerializeField] float MaxSpeed = 20.0f;
     [SerializeField] float MaxForce = 10.0f;
     [SerializeField] float SlowingRadius = 2.0f;
-    [SerializeField] Script_Agent TargetAgent = null;
     [SerializeField] bool IsPlayerControlled = false;
+    [SerializeField] float NeighborhoodRange = 10.0f;
+
+    [SerializeField] bool RedTeam = false;
+
+    bool HasFlag = false;
+    [SerializeField]Script_FlagHolder FlagHolder = null;
+
+    Transform friendlyHome = null;
+    Transform flagTarget = null;
+
+    STATE Aistate = STATE.UNASSIGNED;
+    Script_Agent[] otherAgents = null;
+    Script_Jail enemyJail = null;
 
     Vector2 Velocity = Vector2.zero;
     Vector2 Acceleration = Vector2.zero;
     Vector2 MousePos = Vector2.zero;
-    
-    // Update is called once per frame
+
+    private void Start()
+    {
+        enemyJail = GrabEnemyJail();
+        friendlyHome = GrabFriendlyHome();
+        SetTeamColor();
+        FlagHolder = transform.root.GetComponentInChildren<Script_FlagHolder>();
+        otherAgents = FindObjectsOfType<Script_Agent>();
+    }
     void Update()
     {
         GetMousePositon2D();
         Acceleration = Vector2.zero;
 
-        if (!IsPlayerControlled)
-            Pursuit(TargetAgent);
-        else
+        if (IsPlayerControlled)
+        { 
             Seek(MousePos);
+        }
+        else
+        {
+            HandleStateMachine();
+        }
 
+        ApplyAcceleration();
+        UpdatePositionBasedOnVelocity();
+    }
+    Transform GrabFriendlyHome()
+    {
+        if (RedTeam)
+            return GameObject.FindWithTag("RedSide").transform;
+        else
+            return GameObject.FindWithTag("BlueSide").transform;
+    }
+    void HandleStateMachine()
+    {
+        switch (Aistate)
+        {
+            case STATE.SEEK_JAIL:
+                {
+                    Seek(enemyJail.transform.position);
+                    break;
+                }
+            case STATE.SEEK_HOME:
+                {
+                    Seek(friendlyHome.position);
+                    break;
+                }
+            case STATE.SEEK_FLAG:
+                {
+                    Seek(flagTarget.position);
+                    break;
+                }
+            case STATE.SEEK_FRIENDLY_FLAG:
+                {
+                    Seek(FlagHolder.transform.position);
+                    break;
+                }
+            default:
+                break;
+        }
+    }
+    void ApplyAcceleration()
+    {
         Velocity += Acceleration * Time.deltaTime;
+    }
+    void UpdatePositionBasedOnVelocity()
+    {
         transform.position += new Vector3(Velocity.x, Velocity.y, 0) * Time.deltaTime;
+    }
+    Script_Jail GrabEnemyJail()
+    {
+        foreach (Script_Jail jail in FindObjectsOfType<Script_Jail>())
+        {
+            if (jail.IsRedTeam() != RedTeam)
+            {
+                return jail;
+            }
+        }
+        return null;
+    }
+    void SetTeamColor()
+    {
+        if (RedTeam)
+            GetComponentInChildren<SpriteRenderer>().color = Color.red;
+        else
+            GetComponentInChildren<SpriteRenderer>().color = Color.blue;
+    }
+    Script_Agent IsOtherAgentNear()
+    {
+        foreach (var agent in otherAgents)
+        {
+            if ((agent.transform.position - transform.position).magnitude < NeighborhoodRange
+                && agent != this)
+            {
+                return agent;
+            }
+        }
+
+        return null;
     }
 
     Vector2 GetPosition()
@@ -44,8 +155,27 @@ public class Script_Agent : MonoBehaviour
         _vector *= ratio;
         return _vector;
     }
-
-    Vector2 Seek(Vector2 _position)
+    public Script_FlagHolder GetFlagHolder()
+    {
+        return FlagHolder;
+    }
+    public void SetHasFlag(bool _trueFalse)
+    {
+        HasFlag = _trueFalse;
+    }
+    public bool HasFlagAttached()
+    {
+        return HasFlag;
+    }
+    public bool IsRedTeam()
+    {
+        return RedTeam;
+    }
+    public void SetFlag(Transform _flag)
+    {
+        flagTarget = _flag;
+    }
+    public Vector2 Seek(Vector2 _position)
     {
         Vector2 desiredVelocity = (_position - GetPosition()).normalized * MaxSpeed;
         Vector2 steeringForce = desiredVelocity - Velocity;
@@ -53,7 +183,7 @@ public class Script_Agent : MonoBehaviour
         ApplyForce(steeringForce);
         return steeringForce;
     }
-    Vector2 Flee(Vector2 _position)
+    public Vector2 Flee(Vector2 _position)
     {
         Vector2 desiredVelocity = (GetPosition() - _position).normalized * MaxSpeed;
         Vector2 steeringForce = desiredVelocity - Velocity;
@@ -61,7 +191,7 @@ public class Script_Agent : MonoBehaviour
         ApplyForce(steeringForce);
         return steeringForce;
     }
-    Vector2 Arrive(Vector2 _position)
+    public Vector2 Arrive(Vector2 _position)
     {
         Vector2 steeringForce = Vector2.zero;
         Vector2 desiredVelocity = (_position - GetPosition());
@@ -81,17 +211,25 @@ public class Script_Agent : MonoBehaviour
         ApplyForce(steeringForce);
         return steeringForce;
     }
-    Vector2 Pursuit(Script_Agent _agent)
+    public Vector2 Pursuit(Script_Agent _agent)
     {
         float distance = (_agent.GetPosition() - GetPosition()).magnitude;
         Vector2 futurePostion = _agent.GetPosition() + (_agent.Velocity * distance/MaxSpeed);
         return Seek(futurePostion);
     }
-    Vector2 Evade(Script_Agent _agent)
+    public Vector2 Evade(Script_Agent _agent)
     {
         float distance = (_agent.GetPosition() - GetPosition()).magnitude;
         Vector2 futurePostion = _agent.GetPosition() + (_agent.Velocity * distance / MaxSpeed);
         return Flee(futurePostion);
+    }
+    public void SetState(STATE _newState)
+    {
+        Aistate = _newState;
+    }
+    public STATE GetState()
+    {
+        return Aistate;
     }
 
     void ApplyForce(Vector2 _force)
