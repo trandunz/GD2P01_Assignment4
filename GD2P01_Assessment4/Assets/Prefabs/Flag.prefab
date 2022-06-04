@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4285439806660166169}
   - component: {fileID: 4285439806660166170}
-  - component: {fileID: 7559306800510547673}
+  - component: {fileID: 7667259657866436348}
   m_Layer: 0
   m_Name: Flag
-  m_TagString: Untagged
+  m_TagString: Flag
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RedTeam: 0
---- !u!58 &7559306800510547673
+--- !u!58 &7667259657866436348
 CircleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -59,9 +59,9 @@ CircleCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.27301133, y: -0.026765823}
+  m_Offset: {x: -0.17584592, y: -0.015986085}
   serializedVersion: 2
-  m_Radius: 0.7596283
+  m_Radius: 0.64120966
 --- !u!1 &4285439807409935634
 GameObject:
   m_ObjectHideFlags: 0

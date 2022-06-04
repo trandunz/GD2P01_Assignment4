@@ -53,6 +53,8 @@ MonoBehaviour:
   IsPlayerControlled: 1
   NeighborhoodRange: 5
   RedTeam: 0
+  initialState: 1
+  Manager: {fileID: 0}
 --- !u!58 &7079260978556680865
 CircleCollider2D:
   m_ObjectHideFlags: 0

@@ -4,51 +4,48 @@ using UnityEngine;
 
 public class Script_Flag : MonoBehaviour
 {
-    [SerializeField] bool RedTeam = false;
-    bool IsAttached = false;
+    [SerializeField]bool RedTeam = false;
     Script_Agent AttachedAgent = null;
     public bool IsRedTeam()
     {
         return RedTeam;
     }
+    public void SetRedTeam(bool _redTeam)
+    {
+        RedTeam = _redTeam;
+    }
     private void Update()
     {
-        if (AttachedAgent != null && IsAttached)
+        if (AttachedAgent != null)
         {
             transform.position = AttachedAgent.transform.position;
         }
     }
-    private void OnTriggerEnter2D(Collider2D collision)
+    public void Attach(Script_Agent _agent)
     {
-        if (collision.gameObject.tag == "Agent" && !IsAttached)
-        {
-            Script_Agent agent = collision.GetComponent<Script_Agent>();
-            if (agent.IsRedTeam() != RedTeam && !agent.HasFlagAttached())
-            {
-                agent.SetState(Script_Agent.STATE.SEEK_FRIENDLY_FLAG);
-                agent.SetHasFlag(true);
-                IsAttached = true;
-                AttachedAgent = agent;
-            }
-        }
-        else
-        {
-            if ((AttachedAgent.GetFlagHolder().transform.position - transform.position).magnitude < 10)
-            {
-                AttachedAgent.SetHasFlag(false);
-                transform.SetParent(AttachedAgent.GetFlagHolder().transform);
-                transform.root.GetComponent<Script_TeamManager>().SetFlag(null);
-                IsAttached = false;
-                AttachedAgent.GetFlagHolder().AttachFlag(transform);
-                RedTeam = !RedTeam;
-                AttachedAgent.SetState(Script_Agent.STATE.SEEK_FLAG);
-                AttachedAgent = null;
-            }
-            
-        }
+        AttachedAgent = _agent;
+        _agent.AttachedFlag = this;
+    }
+    public void Attach(Script_FlagHolder _flagHolder)
+    {
+        RedTeam = !RedTeam;
+        AttachedAgent.AttachedFlag = null;
+        AttachedAgent = null;
+        transform.position = _flagHolder.transform.position;
     }
     public bool IsAttachedToAgent()
     {
-        return IsAttached;
+        return AttachedAgent != null;
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "Agent")
+        {
+            Script_Agent agent = collision.GetComponent<Script_Agent>();
+            if (agent.IsRedTeam() != RedTeam && AttachedAgent == null && agent.AttachedFlag == null)
+            {
+                Attach(agent);
+            }
+        }
     }
 }

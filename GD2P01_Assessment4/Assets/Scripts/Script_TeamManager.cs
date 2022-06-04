@@ -6,37 +6,38 @@ public class Script_TeamManager : MonoBehaviour
 {
     [SerializeField] bool RedTeam = false;
     Script_Agent[] team;
-    Script_Jail enemyJail;
-    Script_Flag enemyFlag;
+    public Script_Jail enemyJail;
+    Script_FlagHolder friendlyflagHolder;
+    public bool oneOnWayToFlag = false;
 
     private void Start()
     {
-        team = GetComponentsInChildren<Script_Agent>();
         enemyJail = GrabEnemyJail();
-        enemyFlag = GrabEnemyFlag();
+        team = GetComponentsInChildren<Script_Agent>();
+        friendlyflagHolder = GetComponentInChildren<Script_FlagHolder>();
+        foreach (Script_Agent agent in team)
+        {
+            agent.SetRedTeam(RedTeam);
+        }
+        GetComponentInChildren<Script_Jail>().SetRedTeam(RedTeam);
+        GetComponentInChildren<Script_Flag>().SetRedTeam(RedTeam);
+        friendlyflagHolder.SetRedTeam(RedTeam);
     }
     private void Update()
     {
-        if(team != null)
+        if (team != null)
         {
-            if (enemyFlag == null)
-                enemyFlag = GrabEnemyFlag();
-            if (enemyFlag != null)
-                if (enemyFlag.IsAttachedToAgent())
-                    enemyFlag = GrabEnemyFlag();
-
-            if (IsMemberInJail())
-                GetClosesMemberToJail()?.SetState(Script_Agent.STATE.SEEK_JAIL);
-
-            if (enemyFlag != null)
+            
+            foreach(Script_Agent agent in team)
             {
-                foreach(Script_Agent agent in team)
+                if (agent.StateMachine.GetStateID() != AIStateID.JAILED)
                 {
-                    if (!agent.HasFlagAttached())
-                        agent.SetFlag(enemyFlag.transform);
+                    if (oneOnWayToFlag == false)
+                    {
+                        oneOnWayToFlag = true;
+                        agent.StateMachine.ChangeState(AIStateID.CAPTURE_FLAG);
+                    }
                 }
-                Script_Agent closestToFlag = GetClosesMemberToFlag();
-                closestToFlag?.SetState(Script_Agent.STATE.SEEK_FLAG);
             }
         }
     }
@@ -51,86 +52,23 @@ public class Script_TeamManager : MonoBehaviour
         }
         return null;
     }
-    Script_Flag GrabEnemyFlag()
+    Script_Flag GetClosestFlag()
     {
-        foreach (Script_Flag flag in FindObjectsOfType<Script_Flag>())
+        foreach(Script_Flag flag in FindObjectsOfType<Script_Flag>())
         {
-            if (flag.IsRedTeam() != RedTeam && !flag.IsAttachedToAgent())
+            if (flag.IsRedTeam() != RedTeam)
             {
                 return flag;
             }
         }
         return null;
     }
-    
-    bool IsMemberInJail()
+    public Script_Jail GetEnemyJail()
     {
-        foreach (Script_Agent agent in team)
-        {
-            if (agent.GetState() == Script_Agent.STATE.JAILED)
-                return true;
-        }
-        return false;
+        return enemyJail;
     }
-    Script_Agent GetClosesMemberToJail()
+    public Script_FlagHolder GetFriendlyFlagHolder()
     {
-        Script_Agent closest = team[0];
-        foreach (Script_Agent agent in team)
-        {
-            if (agent.GetState() != Script_Agent.STATE.SEEK_HOME
-                && agent.GetState() != Script_Agent.STATE.SEEK_JAIL
-                && agent.GetState() != Script_Agent.STATE.SEEK_FLAG
-                && agent.GetState() != Script_Agent.STATE.SEEK_FRIENDLY_FLAG)
-                closest = agent;
-            else if (agent.GetState() == Script_Agent.STATE.SEEK_JAIL)
-            {
-                return null;
-            }
-        }
-        foreach (Script_Agent agent in team)
-        {
-            if ((enemyJail.transform.position - agent.transform.position).magnitude <= (enemyJail.transform.position - closest.transform.position).magnitude
-                && agent.GetState() != Script_Agent.STATE.SEEK_HOME
-                && agent.GetState() != Script_Agent.STATE.SEEK_JAIL
-                && agent.GetState() != Script_Agent.STATE.SEEK_FLAG
-                && agent.GetState() != Script_Agent.STATE.SEEK_FRIENDLY_FLAG)
-            {
-                closest = agent;
-            }
-        }
-        return closest;
-    }
-    Script_Agent GetClosesMemberToFlag()
-    {
-        Script_Agent closest = team[0];
-        foreach (Script_Agent agent in team)
-        {
-            if (agent.GetState() != Script_Agent.STATE.SEEK_HOME
-                && agent.GetState() != Script_Agent.STATE.SEEK_JAIL
-                && agent.GetState() != Script_Agent.STATE.SEEK_FLAG
-                && agent.GetState() != Script_Agent.STATE.SEEK_FRIENDLY_FLAG)
-                closest = agent;
-            else if(agent.GetState() == Script_Agent.STATE.SEEK_FLAG)
-            {
-                return null;
-            }
-
-        }
-        foreach (Script_Agent agent in team)
-        {
-            if ((enemyFlag.transform.position - agent.transform.position).magnitude <= (enemyFlag.transform.position - closest.transform.position).magnitude
-                && agent.GetState() != Script_Agent.STATE.SEEK_HOME
-                && agent.GetState() != Script_Agent.STATE.SEEK_JAIL
-                && agent.GetState() != Script_Agent.STATE.SEEK_FLAG
-                && agent.GetState() != Script_Agent.STATE.SEEK_FRIENDLY_FLAG)
-            {
-                closest = agent;
-            }
-        }
-        return closest;
-    }
-    public void SetFlag(Script_Flag _flag)
-    {
-        enemyFlag = _flag;
+        return friendlyflagHolder;
     }
 }

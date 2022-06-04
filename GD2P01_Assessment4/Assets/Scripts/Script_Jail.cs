@@ -7,11 +7,13 @@ public class Script_Jail : MonoBehaviour
     [SerializeField] bool RedTeam = false;
     private void Start()
     {
-        
     }
-
     public bool IsRedTeam()
     {
         return RedTeam;
+    }
+    public void SetRedTeam(bool _redTeam)
+    {
+        RedTeam = _redTeam;
     }
 }
