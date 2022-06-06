@@ -4,10 +4,11 @@ using UnityEngine;
 
 public class State_Idle : AIState
 {
-    Transform enterPos;
+    
     public void Enter(Script_Agent agent)
     {
-        enterPos = agent.transform;
+        agent.Acceleration = Vector2.zero;
+        agent.Velocity = Vector2.zero;
     }
 
     public void Exit(Script_Agent agent)
@@ -21,6 +22,14 @@ public class State_Idle : AIState
 
     public void Update(Script_Agent agent)
     {
-        agent.Arrive(enterPos.position);
+        if (agent.Manager.StartGame)
+        {
+            if (agent.AttachedFlag != null)
+            {
+                agent.StateMachine.ChangeState(AIStateID.FLAG_RETURN);
+                return;
+            }
+            agent.Arrive(agent.StartingPosition);
+        }
     }
 }

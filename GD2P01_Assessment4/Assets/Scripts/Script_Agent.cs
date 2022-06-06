@@ -17,15 +17,15 @@ public class Script_Agent : MonoBehaviour
 
     public Script_Flag AttachedFlag = null;
 
-    Transform friendlyHome = null;
+    public Vector3 StartingPosition;
 
-    Vector2 Velocity = Vector2.zero;
-    Vector2 Acceleration = Vector2.zero;
+    Vector2 SteeringForce = Vector2.zero;
+    public Vector2 Velocity = Vector2.zero;
+    public Vector2 Acceleration = Vector2.zero;
     Vector2 MousePos = Vector2.zero;
 
     private void Start()
     {
-        friendlyHome = GrabFriendlyHome();
         Manager = transform.root.GetComponent<Script_TeamManager>();
         SetTeamColor();
 
@@ -34,40 +34,60 @@ public class Script_Agent : MonoBehaviour
         StateMachine.RegisterState(new State_Idle()) ;
         StateMachine.RegisterState(new State_CaptureFlag());
         StateMachine.RegisterState(new State_FlagReturn());
+        StateMachine.RegisterState(new State_FreeTeamMate());
+        StateMachine.RegisterState(new State_TeamReturn());
+        StateMachine.RegisterState(new State_PlayerControlled());
         StateMachine.ChangeState(initialState);
+        StartingPosition = transform.position;
     }
     void Update()
     {
         GetMousePositon2D();
         Acceleration = Vector2.zero;
+        SteeringForce = Vector2.zero;
 
-        ApplyForce(Vector2.zero);
         StateMachine.Update();
 
-        ApplyAcceleration();
+        if (AttachedFlag != null)
+        {
+            if (RedTeam && transform.position.x < 0)
+            {
+                AttachedFlag.Attach(Manager.GetFriendlyFlagHolder());
+            }
+            else if (!RedTeam && transform.position.x > 0)
+            {
+                AttachedFlag.Attach(Manager.GetFriendlyFlagHolder());
+            }
+        }
+
+        Vector2 dir = Velocity;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+
+        Velocity += SteeringForce * Time.deltaTime;
+
         UpdatePositionBasedOnVelocity();
     }
-    Transform GrabFriendlyHome()
-    {
-        if (RedTeam)
-            return transform.root.transform;
-        else
-            return transform.root.transform;
-    }
+
     void ApplyAcceleration()
     {
-        Velocity += Acceleration * Time.deltaTime;
+        
     }
     void UpdatePositionBasedOnVelocity()
     {
         transform.position += new Vector3(Velocity.x, Velocity.y, 0) * Time.deltaTime;
     }
-    void SetTeamColor()
+    public void SetTeamColor()
     {
         if (RedTeam)
             GetComponentInChildren<SpriteRenderer>().color = Color.red;
         else
             GetComponentInChildren<SpriteRenderer>().color = Color.blue;
+    }
+
+    public void SetColor(Color _newcolor)
+    {
+        GetComponentInChildren<SpriteRenderer>().color = _newcolor;
     }
 
     Vector2 GetPosition()
@@ -118,6 +138,17 @@ public class Script_Agent : MonoBehaviour
         }
         return closestFlag;
     }
+    public Script_Agent GetClosestJailedAgent()
+    {
+        foreach(Script_Agent agent in Manager.team)
+        {
+            if (agent.StateMachine.GetStateID() == AIStateID.JAILED)
+            {
+                return agent;
+            }
+        }
+        return null;
+    }
     public bool IsRedTeam()
     {
         return RedTeam;
@@ -126,20 +157,55 @@ public class Script_Agent : MonoBehaviour
     {
         RedTeam = _redTeam;
     }
+
+    public Vector2 AvoidOtherAgents()
+    {
+        Vector2 steeringForce = Vector2.zero;
+        Vector2 desiredVelocity = Vector2.zero;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position + transform.right, transform.right, 5);
+        if (hit)
+        {
+            desiredVelocity = (transform.position - new Vector3(hit.point.x, hit.point.y, 0)) * MaxSpeed;
+            steeringForce = desiredVelocity - Velocity;
+            SteeringForce += steeringForce;
+        }
+        else
+        {
+            hit = Physics2D.Raycast((transform.position + transform.right) + transform.up, transform.right, 5);
+            if (hit)
+            {
+                desiredVelocity = (transform.position - new Vector3(hit.point.x, hit.point.y, 0)) * MaxSpeed;
+                steeringForce = desiredVelocity - Velocity;
+                SteeringForce += steeringForce;
+            }
+            else
+            {
+                hit = Physics2D.Raycast((transform.position + transform.right )- transform.up , transform.right, 5);
+                if (hit)
+                {
+                    desiredVelocity = (transform.position - new Vector3(hit.point.x, hit.point.y, 0)) * MaxSpeed;
+                    steeringForce = desiredVelocity - Velocity;
+                    SteeringForce += steeringForce;
+                }
+            }
+        }
+
+        return steeringForce;
+    }
     public Vector2 Seek(Vector2 _position)
     {
         Vector2 desiredVelocity = (_position - GetPosition()).normalized * MaxSpeed;
         Vector2 steeringForce = desiredVelocity - Velocity;
-        //steeringForce = Truncate(steeringForce, MaxForce);
-        ApplyForce(steeringForce);
+        steeringForce = Truncate(steeringForce, MaxForce);
+        SteeringForce += steeringForce;
         return steeringForce;
     }
     public Vector2 Flee(Vector2 _position)
     {
         Vector2 desiredVelocity = (GetPosition() - _position).normalized * MaxSpeed;
         Vector2 steeringForce = desiredVelocity - Velocity;
-        //steeringForce = Truncate(steeringForce, MaxForce);
-        ApplyForce(steeringForce);
+        steeringForce = Truncate(steeringForce, MaxForce);
+        SteeringForce += steeringForce;
         return steeringForce;
     }
     public Vector2 Arrive(Vector2 _position)
@@ -158,29 +224,61 @@ public class Script_Agent : MonoBehaviour
         }
 
         steeringForce = desiredVelocity - Velocity;
-        //steeringForce = Truncate(steeringForce, MaxForce);
-        ApplyForce(steeringForce);
+        steeringForce = Truncate(steeringForce, MaxForce);
+        SteeringForce += steeringForce;
+
         return steeringForce;
     }
     public Vector2 Pursuit(Script_Agent _agent)
     {
         float distance = (_agent.GetPosition() - GetPosition()).magnitude;
         Vector2 futurePostion = _agent.GetPosition() + (_agent.Velocity * distance/MaxSpeed);
-        return Seek(futurePostion);
+        SteeringForce += Seek(futurePostion);
+        return SteeringForce;
     }
     public Vector2 Evade(Script_Agent _agent)
     {
         float distance = (_agent.GetPosition() - GetPosition()).magnitude;
         Vector2 futurePostion = _agent.GetPosition() + (_agent.Velocity * distance / MaxSpeed);
-        return Flee(futurePostion);
+        SteeringForce += Flee(futurePostion);
+        return SteeringForce;
     }
-    void ApplyForce(Vector2 _force)
+    public bool IsOnFriendySide()
     {
-        Acceleration += _force;
+        if (RedTeam && transform.position.x < 0)
+        {
+            return true;
+        }
+        else if (!RedTeam && transform.position.x > 0)
+        {
+            return true;
+        }
+        return false;
     }
-    void GetMousePositon2D()
+    public void ApplyForce(Vector2 _force)
+    {
+        Acceleration = _force;
+    }
+    public Vector2 GetMousePositon2D()
     {
         MousePos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
         MousePos = Camera.main.ScreenToWorldPoint(MousePos);
+        return MousePos;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.transform.tag == "Agent")
+        {
+            Script_Agent otherAgent = collision.transform.GetComponent<Script_Agent>();
+            if (otherAgent.IsRedTeam() != RedTeam && IsOnFriendySide())
+            {
+                if (otherAgent.AttachedFlag)
+                {
+                    otherAgent.AttachedFlag.Return();
+                }
+                otherAgent.StateMachine.ChangeState(AIStateID.JAILED);
+            }
+        }
     }
 }

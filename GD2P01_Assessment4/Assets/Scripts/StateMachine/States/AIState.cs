@@ -7,7 +7,10 @@ public enum AIStateID
     JAILED,
     IDLE,
     CAPTURE_FLAG,
-    FLAG_RETURN
+    FLAG_RETURN,
+    FREE_FRIENDLY,
+    FRIENDLY_RETURN,
+    PLAYER_CONTROLLED
 }
 public interface AIState
 {

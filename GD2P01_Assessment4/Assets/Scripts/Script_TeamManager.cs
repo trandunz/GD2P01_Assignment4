@@ -4,15 +4,21 @@ using UnityEngine;
 
 public class Script_TeamManager : MonoBehaviour
 {
-    [SerializeField] bool RedTeam = false;
-    Script_Agent[] team;
+    public bool RedTeam = false;
+    public Script_Agent[] team;
     public Script_Jail enemyJail;
     Script_FlagHolder friendlyflagHolder;
+    public Transform enemyManager;
     public bool oneOnWayToFlag = false;
+    public bool oneOnWayToJail = false;
+    public bool StartGame = false;
+    public bool IsPlayersSide = false;
+    int PlayerControlledIndex = 0;
 
     private void Start()
     {
         enemyJail = GrabEnemyJail();
+        enemyManager = enemyJail.transform.root;
         team = GetComponentsInChildren<Script_Agent>();
         friendlyflagHolder = GetComponentInChildren<Script_FlagHolder>();
         foreach (Script_Agent agent in team)
@@ -25,21 +31,75 @@ public class Script_TeamManager : MonoBehaviour
     }
     private void Update()
     {
-        if (team != null)
+        if (StartGame == true)
         {
-            
-            foreach(Script_Agent agent in team)
+            if (IsPlayersSide)
             {
-                if (agent.StateMachine.GetStateID() != AIStateID.JAILED)
+                if (team[PlayerControlledIndex].StateMachine.GetStateID() != AIStateID.PLAYER_CONTROLLED)
+                    team[PlayerControlledIndex].StateMachine.ChangeState(AIStateID.PLAYER_CONTROLLED);
+                if (Input.GetKeyDown(KeyCode.LeftShift))
                 {
-                    if (oneOnWayToFlag == false)
+                    team[PlayerControlledIndex].StateMachine.ChangeState(AIStateID.IDLE);
+                    PlayerControlledIndex = (PlayerControlledIndex + 1) % team.Length;
+                    while (team[PlayerControlledIndex].StateMachine.GetStateID() == AIStateID.JAILED)
                     {
-                        oneOnWayToFlag = true;
-                        agent.StateMachine.ChangeState(AIStateID.CAPTURE_FLAG);
+                        PlayerControlledIndex = (PlayerControlledIndex + 1) % team.Length;
+                    }
+                    if (team[PlayerControlledIndex].StateMachine.GetStateID() != AIStateID.PLAYER_CONTROLLED)
+                    {
+                        team[PlayerControlledIndex].StateMachine.ChangeState(AIStateID.PLAYER_CONTROLLED);
+                    }
+                }
+            }
+
+            if (team != null)
+            {
+                oneOnWayToFlag = IsFriendlyCapturingFlag();
+                foreach (Script_Agent agent in team)
+                {
+                    if (agent.StateMachine.GetStateID() == AIStateID.IDLE)
+                    {
+                        if (oneOnWayToFlag == false)
+                        {
+                            oneOnWayToFlag = true;
+                            agent.StateMachine.ChangeState(AIStateID.CAPTURE_FLAG);
+                        }
                     }
                 }
             }
         }
+    }
+    public void FinishGame()
+    {
+        StartGame = false;
+        foreach (Script_Agent agent in team)
+        {
+            agent.StateMachine.ChangeState(AIStateID.IDLE);
+        }
+    }
+    public void SendAgentToRescue()
+    {
+        foreach (Script_Agent agent in team)
+        {
+            if (agent.StateMachine.GetStateID() == AIStateID.IDLE)
+            {
+                agent.StateMachine.ChangeState(AIStateID.FREE_FRIENDLY);
+                Debug.Log(agent.name);
+                return;
+            }
+        }
+    }
+    bool IsFriendlyCapturingFlag()
+    {
+        foreach (Script_Agent agent in team)
+        {
+            if (agent.StateMachine.GetStateID() == AIStateID.CAPTURE_FLAG
+                || agent.StateMachine.GetStateID() == AIStateID.FLAG_RETURN)
+            {
+                return true;
+            }
+        }
+        return false;
     }
     Script_Jail GrabEnemyJail()
     {

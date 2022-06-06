@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class State_FlagReturn : AIState
+public class State_TeamReturn : AIState
 {
     void AIState.Enter(Script_Agent agent)
     {
@@ -14,7 +14,7 @@ public class State_FlagReturn : AIState
 
     AIStateID AIState.GetId()
     {
-        return AIStateID.FLAG_RETURN;
+        return AIStateID.FRIENDLY_RETURN;
     }
 
     void AIState.Update(Script_Agent agent)
@@ -22,14 +22,12 @@ public class State_FlagReturn : AIState
         agent.Arrive(agent.Manager.transform.position);
         if (agent.IsRedTeam() && agent.transform.position.x < 0)
         {
-            agent.Manager.oneOnWayToFlag = false;
-            agent.AttachedFlag.Attach(agent.Manager.GetFriendlyFlagHolder());
+            agent.Manager.oneOnWayToJail = false;
             agent.StateMachine.ChangeState(AIStateID.IDLE);
         }
         else if (!agent.IsRedTeam() && agent.transform.position.x > 0)
         {
-            agent.Manager.oneOnWayToFlag = false;
-            agent.AttachedFlag.Attach(agent.Manager.GetFriendlyFlagHolder());
+            agent.Manager.oneOnWayToJail = false;
             agent.StateMachine.ChangeState(AIStateID.IDLE);
         }
     }

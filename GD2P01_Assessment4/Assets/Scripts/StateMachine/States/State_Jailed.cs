@@ -10,6 +10,7 @@ public class State_Jailed : AIState
     }
     public void Enter(Script_Agent agent)
     {
+        agent.Manager.SendAgentToRescue();
     }
     public void Update(Script_Agent agent)
     {

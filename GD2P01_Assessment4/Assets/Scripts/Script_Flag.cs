@@ -28,10 +28,18 @@ public class Script_Flag : MonoBehaviour
     }
     public void Attach(Script_FlagHolder _flagHolder)
     {
-        RedTeam = !RedTeam;
+        RedTeam = _flagHolder.IsRedTeam();
         AttachedAgent.AttachedFlag = null;
         AttachedAgent = null;
+        transform.parent = _flagHolder.transform;
         transform.position = _flagHolder.transform.position;
+    }
+    public void Return()
+    {
+        if (AttachedAgent != null)
+        {
+            Attach(AttachedAgent.Manager.enemyManager.GetComponent<Script_TeamManager>().GetFriendlyFlagHolder());
+        }
     }
     public bool IsAttachedToAgent()
     {
