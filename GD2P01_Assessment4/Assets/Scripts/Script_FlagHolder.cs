@@ -8,6 +8,7 @@ public class Script_FlagHolder : MonoBehaviour
     [SerializeField] List<Script_Flag> flags = new List<Script_Flag>();
     private void Start()
     {
+        GetComponentInChildren<Script_Flag>().SetRedTeam(RedTeam);
     }
     public bool IsRedTeam() 
     {

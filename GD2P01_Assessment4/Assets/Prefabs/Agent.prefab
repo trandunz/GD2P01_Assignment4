@@ -127,6 +127,9 @@ MonoBehaviour:
   initialState: 1
   Manager: {fileID: 0}
   AttachedFlag: {fileID: 0}
+  StartingPosition: {x: 0, y: 0, z: 0}
+  Velocity: {x: 0, y: 0}
+  Acceleration: {x: 0, y: 0}
 --- !u!58 &7079260978556680865
 CircleCollider2D:
   m_ObjectHideFlags: 0

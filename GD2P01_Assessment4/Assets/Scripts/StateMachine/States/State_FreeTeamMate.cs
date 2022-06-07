@@ -22,9 +22,9 @@ public class State_FreeTeamMate : AIState
     public void Update(Script_Agent agent)
     {
         agent.Arrive(closestFriendly.transform.position);
-        if ((closestFriendly.transform.position - agent.transform.position).magnitude <= 1.0f)
+        if ((closestFriendly.transform.position - agent.transform.position).magnitude <= 2.0f)
         {
-            closestFriendly.StateMachine.ChangeState(AIStateID.FRIENDLY_RETURN);
+            closestFriendly.Manager.friendlyJail.Free(closestFriendly);
             agent.StateMachine.ChangeState(AIStateID.FRIENDLY_RETURN);
         }
     }

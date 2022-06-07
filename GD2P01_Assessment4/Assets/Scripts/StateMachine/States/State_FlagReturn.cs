@@ -20,16 +20,11 @@ public class State_FlagReturn : AIState
     void AIState.Update(Script_Agent agent)
     {
         agent.Arrive(agent.Manager.transform.position);
-        if (agent.IsRedTeam() && agent.transform.position.x < 0)
+        if (agent.IsOnFriendySide())
         {
             agent.Manager.oneOnWayToFlag = false;
-            agent.AttachedFlag.Attach(agent.Manager.GetFriendlyFlagHolder());
-            agent.StateMachine.ChangeState(AIStateID.IDLE);
-        }
-        else if (!agent.IsRedTeam() && agent.transform.position.x > 0)
-        {
-            agent.Manager.oneOnWayToFlag = false;
-            agent.AttachedFlag.Attach(agent.Manager.GetFriendlyFlagHolder());
+            if (agent.AttachedFlag != null)
+                agent.AttachedFlag.Attach(agent.Manager.GetFriendlyFlagHolder());
             agent.StateMachine.ChangeState(AIStateID.IDLE);
         }
     }

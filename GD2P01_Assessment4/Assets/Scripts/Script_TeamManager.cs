@@ -4,9 +4,11 @@ using UnityEngine;
 
 public class Script_TeamManager : MonoBehaviour
 {
+    [SerializeField] GameObject AgentPrefab;
     public bool RedTeam = false;
     public Script_Agent[] team;
     public Script_Jail enemyJail;
+    public Script_Jail friendlyJail;
     Script_FlagHolder friendlyflagHolder;
     public Transform enemyManager;
     public bool oneOnWayToFlag = false;
@@ -19,15 +21,11 @@ public class Script_TeamManager : MonoBehaviour
     {
         enemyJail = GrabEnemyJail();
         enemyManager = enemyJail.transform.root;
-        team = GetComponentsInChildren<Script_Agent>();
+        friendlyJail = GetComponentInChildren<Script_Jail>();
         friendlyflagHolder = GetComponentInChildren<Script_FlagHolder>();
-        foreach (Script_Agent agent in team)
-        {
-            agent.SetRedTeam(RedTeam);
-        }
-        GetComponentInChildren<Script_Jail>().SetRedTeam(RedTeam);
-        GetComponentInChildren<Script_Flag>().SetRedTeam(RedTeam);
+
         friendlyflagHolder.SetRedTeam(RedTeam);
+        friendlyJail.SetRedTeam(RedTeam);
     }
     private void Update()
     {
@@ -67,6 +65,31 @@ public class Script_TeamManager : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+    public void SpawnAgent(int _count)
+    {
+        int signed = 1;
+        if (RedTeam)
+        {
+            for(int i = 0; i < _count; i++)
+            {
+                Instantiate(AgentPrefab, new Vector3(-5, i * signed, 0), Quaternion.identity, transform);
+                signed *= -1;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < _count; i++)
+            {
+                Instantiate(AgentPrefab, new Vector3(5, i * signed, 0), Quaternion.identity, transform);
+                signed *= -1;
+            }
+        }
+        team = GetComponentsInChildren<Script_Agent>();
+        foreach (Script_Agent agent in team)
+        {
+            agent.SetRedTeam(RedTeam);
         }
     }
     public void FinishGame()

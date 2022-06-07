@@ -14,7 +14,6 @@ public class State_Jailed : AIState
     }
     public void Update(Script_Agent agent)
     {
-        agent.transform.position = agent.Manager.enemyJail.transform.position;
     }
     public void Exit(Script_Agent agent)
     {

@@ -19,6 +19,8 @@ public class Script_Agent : MonoBehaviour
 
     public Vector3 StartingPosition;
 
+    bool IsFreeingAgent = false;
+
     Vector2 SteeringForce = Vector2.zero;
     public Vector2 Velocity = Vector2.zero;
     public Vector2 Acceleration = Vector2.zero;
@@ -57,6 +59,17 @@ public class Script_Agent : MonoBehaviour
             else if (!RedTeam && transform.position.x > 0)
             {
                 AttachedFlag.Attach(Manager.GetFriendlyFlagHolder());
+            }
+        }
+        if (IsFreeingAgent)
+        {
+            if (RedTeam && transform.position.x < 0)
+            {
+                IsFreeingAgent = false;
+            }
+            else if (!RedTeam && transform.position.x > 0)
+            {
+                IsFreeingAgent = false;
             }
         }
 
@@ -273,11 +286,7 @@ public class Script_Agent : MonoBehaviour
             Script_Agent otherAgent = collision.transform.GetComponent<Script_Agent>();
             if (otherAgent.IsRedTeam() != RedTeam && IsOnFriendySide())
             {
-                if (otherAgent.AttachedFlag)
-                {
-                    otherAgent.AttachedFlag.Return();
-                }
-                otherAgent.StateMachine.ChangeState(AIStateID.JAILED);
+                Manager.friendlyJail.Jail(otherAgent);
             }
         }
     }
