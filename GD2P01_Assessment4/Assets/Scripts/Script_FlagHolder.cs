@@ -8,7 +8,6 @@ public class Script_FlagHolder : MonoBehaviour
     [SerializeField] List<Script_Flag> flags = new List<Script_Flag>();
     private void Start()
     {
-        GetComponentInChildren<Script_Flag>().SetRedTeam(RedTeam);
     }
     public bool IsRedTeam() 
     {
@@ -27,14 +26,8 @@ public class Script_FlagHolder : MonoBehaviour
         flags.Clear();
         foreach (Script_Flag flag in GetComponentsInChildren<Script_Flag>())
         {
+            flag.SetRedTeam(RedTeam);
             flags.Add(flag);
-        }
-    }
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.tag == "Flag")
-        {
-            Script_Flag flag = collision.GetComponent<Script_Flag>();
         }
     }
 }

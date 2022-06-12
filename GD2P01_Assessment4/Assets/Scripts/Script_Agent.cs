@@ -52,26 +52,19 @@ public class Script_Agent : MonoBehaviour
 
         if (AttachedFlag != null)
         {
-            if (RedTeam && transform.position.x < 0)
-            {
-                AttachedFlag.Attach(Manager.GetFriendlyFlagHolder());
-            }
-            else if (!RedTeam && transform.position.x > 0)
+            if (IsOnFriendySide())
             {
                 AttachedFlag.Attach(Manager.GetFriendlyFlagHolder());
             }
         }
         if (IsFreeingAgent)
         {
-            if (RedTeam && transform.position.x < 0)
-            {
-                IsFreeingAgent = false;
-            }
-            else if (!RedTeam && transform.position.x > 0)
+            if (IsOnFriendySide())
             {
                 IsFreeingAgent = false;
             }
         }
+        AvoidOtherAgents();
 
         Vector2 dir = Velocity;
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
@@ -175,34 +168,43 @@ public class Script_Agent : MonoBehaviour
     {
         Vector2 steeringForce = Vector2.zero;
         Vector2 desiredVelocity = Vector2.zero;
-        RaycastHit2D hit = Physics2D.Raycast(transform.position + transform.right, transform.right, 5);
-        if (hit)
+
+        if (!IsVelocityOnFriendlySide() && StateMachine.GetStateID() != AIStateID.JAILED && StateMachine.GetStateID() != AIStateID.PLAYER_CONTROLLED)
         {
-            desiredVelocity = (transform.position - new Vector3(hit.point.x, hit.point.y, 0)) * MaxSpeed;
-            steeringForce = desiredVelocity - Velocity;
-            SteeringForce += steeringForce;
-        }
-        else
-        {
-            hit = Physics2D.Raycast((transform.position + transform.right) + transform.up, transform.right, 5);
-            if (hit)
+            Script_Agent nearestEnemy = Manager.enemyManager.team[0];
+            foreach (Script_Agent agent in Manager.enemyManager.team)
             {
-                desiredVelocity = (transform.position - new Vector3(hit.point.x, hit.point.y, 0)) * MaxSpeed;
-                steeringForce = desiredVelocity - Velocity;
-                SteeringForce += steeringForce;
-            }
-            else
-            {
-                hit = Physics2D.Raycast((transform.position + transform.right )- transform.up , transform.right, 5);
-                if (hit)
+                if ((nearestEnemy.transform.position - transform.position).magnitude > (agent.transform.position - transform.position).magnitude)
                 {
-                    desiredVelocity = (transform.position - new Vector3(hit.point.x, hit.point.y, 0)) * MaxSpeed;
-                    steeringForce = desiredVelocity - Velocity;
-                    SteeringForce += steeringForce;
+                    nearestEnemy = agent;
                 }
             }
+            float distance = (nearestEnemy.transform.position - transform.position).magnitude;
+            float dot = Vector2.Dot(Velocity, nearestEnemy.GetPosition() - GetPosition());
+            if (distance < 5)
+            {
+                if (dot >= 0)
+                {
+                    if (dot > 0.5f)
+                    {
+                        desiredVelocity = (Quaternion.Euler(0, 0, 90) * transform.right) * MaxSpeed;
+                    }
+                    else
+                    {
+                        desiredVelocity = (Quaternion.Euler(0, 0, -90) * transform.right) * MaxSpeed;
+                    }
+                }
+                else
+                {
+                    desiredVelocity = (transform.position - nearestEnemy.transform.position).normalized * MaxSpeed;
+                }
+            }
+            if (desiredVelocity != Vector2.zero)
+            {
+                steeringForce = desiredVelocity - Velocity;
+                Velocity += steeringForce * Time.deltaTime;
+            }
         }
-
         return steeringForce;
     }
     public Vector2 Seek(Vector2 _position)
@@ -263,6 +265,18 @@ public class Script_Agent : MonoBehaviour
             return true;
         }
         else if (!RedTeam && transform.position.x > 0)
+        {
+            return true;
+        }
+        return false;
+    }
+    public bool IsVelocityOnFriendlySide()
+    {
+        if (RedTeam && (GetPosition() + Velocity).x < 0)
+        {
+            return true;
+        }
+        else if (!RedTeam && (GetPosition() + Velocity).x > 0)
         {
             return true;
         }

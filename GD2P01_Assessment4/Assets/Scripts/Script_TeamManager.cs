@@ -10,17 +10,18 @@ public class Script_TeamManager : MonoBehaviour
     public Script_Jail enemyJail;
     public Script_Jail friendlyJail;
     Script_FlagHolder friendlyflagHolder;
-    public Transform enemyManager;
+    public Script_TeamManager enemyManager;
     public bool oneOnWayToFlag = false;
     public bool oneOnWayToJail = false;
     public bool StartGame = false;
     public bool IsPlayersSide = false;
     int PlayerControlledIndex = 0;
+    bool doOnce = true;
 
     private void Start()
     {
         enemyJail = GrabEnemyJail();
-        enemyManager = enemyJail.transform.root;
+        enemyManager = enemyJail.transform.root.GetComponent<Script_TeamManager>();
         friendlyJail = GetComponentInChildren<Script_Jail>();
         friendlyflagHolder = GetComponentInChildren<Script_FlagHolder>();
 
@@ -33,8 +34,12 @@ public class Script_TeamManager : MonoBehaviour
         {
             if (IsPlayersSide)
             {
-                if (team[PlayerControlledIndex].StateMachine.GetStateID() != AIStateID.PLAYER_CONTROLLED)
-                    team[PlayerControlledIndex].StateMachine.ChangeState(AIStateID.PLAYER_CONTROLLED);
+                if (doOnce)
+                {
+                    doOnce = false;
+                    if (team[PlayerControlledIndex].StateMachine.GetStateID() != AIStateID.PLAYER_CONTROLLED)
+                        team[PlayerControlledIndex].StateMachine.ChangeState(AIStateID.PLAYER_CONTROLLED);
+                }
                 if (Input.GetKeyDown(KeyCode.LeftShift))
                 {
                     team[PlayerControlledIndex].StateMachine.ChangeState(AIStateID.IDLE);
@@ -43,7 +48,8 @@ public class Script_TeamManager : MonoBehaviour
                     {
                         PlayerControlledIndex = (PlayerControlledIndex + 1) % team.Length;
                     }
-                    if (team[PlayerControlledIndex].StateMachine.GetStateID() != AIStateID.PLAYER_CONTROLLED)
+                    if (team[PlayerControlledIndex].StateMachine.GetStateID() != AIStateID.PLAYER_CONTROLLED
+                        && team[PlayerControlledIndex].StateMachine.GetStateID() != AIStateID.JAILED)
                     {
                         team[PlayerControlledIndex].StateMachine.ChangeState(AIStateID.PLAYER_CONTROLLED);
                     }
