@@ -47,8 +47,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c7e74019b4f7d24c8c32448fc3dc183, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MaxSpeed: 10
-  MaxForce: 20
+  MaxSpeed: 5
+  MaxForce: 10
   SlowingRadius: 2
   IsPlayerControlled: 1
   NeighborhoodRange: 5

@@ -1,4 +1,14 @@
-﻿using System.Collections;
+﻿// Bachelor of Software Engineering 
+// Media Design School 
+// Auckland 
+// New Zealand 
+// (c) Media Design School
+// File Name : Script_FlagHolder.cs 
+// Description : Handles funcionality for the flag holder
+// Author : William Inman
+// Mail : william.inman@mds.ac.nz
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,6 +33,7 @@ public class Script_FlagHolder : MonoBehaviour
     }
     private void Update()
     {
+        // Grap all flags and set there team correctly
         flags.Clear();
         foreach (Script_Flag flag in GetComponentsInChildren<Script_Flag>())
         {

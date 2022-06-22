@@ -495,7 +495,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.3604564, y: 0.862288}
   m_AnchorMax: {x: 0.639644, y: 0.947}
-  m_AnchoredPosition: {x: 0.0000009536743, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -0.0000019073486, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &612285845
@@ -1053,16 +1053,10 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: '
-
-    Press TAB To Pause
+  m_Text: 'Press SHIFT To Switch Between Members
 
 
-    Press SHIFT To Switch Between Members
-
-
-    Control
-    Member With Mouse'
+    Control Member With Mouse'
 --- !u!222 &1356828452
 CanvasRenderer:
   m_ObjectHideFlags: 0
